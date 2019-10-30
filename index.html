@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Todo</title>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css">
+    <script src="https://cdn.bootcss.com/localforage/1.7.3/localforage.min.js"></script>
+    <script src="https://cdn.bootcss.com/lodash.js/4.17.15/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <style>
+        h1 {
+            font-family: cursive;
+            text-align: center;
+            color: #d35400;
+            text-shadow: 5px 5px 3px grey;
+        }
+
+        .text-complete {
+            text-decoration-line: line-through;
+            color: rgb(160, 160, 160);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>{{title}}</h1>
+        <div class="routine">
+            <div class="input">
+                <input type="text" v-model.trim="routine" @keydown.enter="handleAddRoutine" placeholder="输入例行公事">
+                <input type="button" value="添加例行公事" @click="handleAddRoutine">
+            </div>
+            <div class="list">
+                <ul>
+                    <li v-for="(r,i) in routines" :key="r.name+i" :class="{'text-complete':r.state}">
+                        <input type="checkbox" v-model="r.state">{{r.name}} <button @click="handleDeleteRoutine(i)"><span
+                                class="fa fa-trash-o"></span></button> <br>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="trivial">
+            <div class="input">
+                <input type="text" v-model.trim="trivial" @keydown.enter="handleAddTrivial" placeholder="输入琐事">
+                <input type="button" value="添加琐事" @click="handleAddTrivial">
+            </div>
+            <div class="list">
+                <ul>
+                    <li v-for="(t,i) in trivials" :key="t.name+i" :class="{'text-complete':t.state}">
+                        <input type="checkbox" v-model="t.state">{{t.name}}<button @click="handleDeleteTrivial(i)"><span
+                                class="fa fa-trash-o"></span></button><br>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="todo">
+            <div class="input">
+                <input type="text" v-model.trim="todo" @keydown.enter="handleAddTodo" placeholder="输入todo">
+                <input type="button" value="添加todo" @click="handleAddTodo">
+            </div>
+            <div class="list">
+                <div class="day" v-for="(day,indexDay) in todos" :key="day.date">
+                    <h4>{{day.date}}</h4>
+                    <ul>
+                        <li v-for="(t,i) in day.todos" :key="t.name+i" :class="{'text-complete':t.state}">
+                            <input type="checkbox" v-model="t.state">{{t.name}}<button @click="handleDeleteTodo(indexDay,i)"><span
+                                    class="fa fa-trash-o"></span></button><br>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        const vm = new Vue({
+            el: "#app",
+            data: {
+                title: "Todo",
+                routine: "",
+                trivial: "",
+                todo: "",
+                routines: [],
+                trivials: [],
+                todos: [],
+                today: "",
+            },
+            created: function () {
+                localforage.getItem('today', function (err, data) {
+                    if (err) {
+                        console.log(err)
+                    } else {
+                        this.today = data || new Date().toLocaleDateString();
+                        let tomorrow = !this.today === new Date().toLocaleDateString();
+                        localforage.getItem('routines', function (err, data) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                this.routines = data || [];
+                                if (tomorrow) {
+                                    this.routines.forEach(r => {
+                                        r.state = false;
+                                    });
+                                }
+                            }
+                        }.bind(this));
+                        localforage.getItem('trivials', function (err, data) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                this.trivials = data || [];
+                                if (tomorrow) {
+                                    this.trivials = [];
+                                }
+                            }
+                        }.bind(this));
+                        localforage.getItem('todos', function (err, data) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                this.todos = data || [];
+                            }
+                        }.bind(this));
+                    }
+                }.bind(this))
+
+            },
+            watch: {
+                routines: {
+                    handler: function (val, oldval) {
+                        localforage.setItem('routines', val, function (err) {
+                            err && console.log(err);
+                        });
+                    },
+                    deep: true
+                },
+                trivials: {
+                    handler: function (val, oldval) {
+                        localforage.setItem('trivials', val, function (err) {
+                            err && console.log(err);
+                        });
+                    },
+                    deep: true
+                },
+                todos: {
+                    handler: function (val, oldval) {
+                        localforage.setItem('todos', val, function (err) {
+                            err && console.log(err);
+                        });
+                    },
+                    deep: true
+                },
+            },
+            methods: {
+                handleAddRoutine() {
+                    if (this.routine && !this.routines.map(r => r.name).includes(this.routine)) {
+                        this.routines.push({
+                            name: this.routine,
+                            state: false,
+                        });
+                        this.routine = "";
+                    }
+                },
+                handleAddTrivial() {
+                    if (this.trivial && !this.trivials.map(t => t.name).includes(this.trivial)) {
+                        this.trivials.push({
+                            name: this.trivial,
+                            state: false,
+                        })
+                        this.trivial = "";
+                    }
+                },
+                handleAddTodo() {
+                    if (this.todo) {
+                        let index = _.findIndex(this.todos, ['date', new Date().toLocaleDateString()]);
+                        if (index == -1) {
+                            this.todos.unshift({
+                                date: new Date().toLocaleDateString(),
+                                todos: []
+                            });
+                            index = _.findIndex(this.todos, ['date', new Date().toLocaleDateString()]);
+                        }
+                        if (!this.todos[index].todos.map(t => t.name).includes(this.todo)) {
+                            this.todos[index].todos.push({
+                                name: this.todo,
+                                state: false,
+                            });
+                            this.todo = "";
+                        }
+                    }
+                },
+                handleDeleteRoutine(i) {
+                    this.routines.splice(i,1);
+                },
+                handleDeleteTrivial(i) {
+                    this.trivials.splice(i,1);
+                },
+                handleDeleteTodo(indexDay,i) {
+                    this.todos[indexDay].todos.splice(i,1);
+                },
+            }
+        });
+    </script>
+</body>
+
+</html>
