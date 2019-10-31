@@ -63,7 +63,7 @@
                 <input type="button" value="添加todo" @click="handleAddTodo">
             </div>
             <div class="list">
-                <div class="day" v-for="(day,indexDay) in todos" :key="day.date">
+                <div class="day" v-for="(day,indexDay) in filteredtodos" :key="day.date">
                     <h4>{{day.date}}</h4>
                     <ul>
                         <li v-for="(t,i) in day.todos" :key="t.name+i" :class="{'text-complete':t.state}">
@@ -95,7 +95,12 @@
                         console.log(err)
                     } else {
                         this.today = data || new Date().toLocaleDateString();
-                        let tomorrow = !this.today === new Date().toLocaleDateString();
+                        console.log(this.today)
+                        let tomorrow = !(this.today === new Date().toLocaleDateString());
+                        console.log(tomorrow)
+                        if (tomorrow) {
+                            this.today=new Date().toLocaleDateString();
+                        }
                         localforage.getItem('routines', function (err, data) {
                             if (err) {
                                 console.log(err);
@@ -154,6 +159,16 @@
                     },
                     deep: true
                 },
+                today:function(val,oldval){
+                    localforage.setItem('today',val,function(err){
+                        err && console.log(err);
+                    })
+                }
+            },
+            computed:{
+                filteredtodos:function(){
+                    return _.sortBy(this.todos,o=>-Date.parse(o.date))
+                }
             },
             methods: {
                 handleAddRoutine() {
@@ -176,13 +191,13 @@
                 },
                 handleAddTodo() {
                     if (this.todo) {
-                        let index = _.findIndex(this.todos, ['date', new Date().toLocaleDateString()]);
+                        let index = _.findIndex(this.todos, ['date', this.today]);
                         if (index == -1) {
                             this.todos.unshift({
-                                date: new Date().toLocaleDateString(),
+                                date: this.today,
                                 todos: []
                             });
-                            index = _.findIndex(this.todos, ['date', new Date().toLocaleDateString()]);
+                            index = _.findIndex(this.todos, ['date', this.today]);
                         }
                         if (!this.todos[index].todos.map(t => t.name).includes(this.todo)) {
                             this.todos[index].todos.push({
