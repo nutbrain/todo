@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Todo</title>
-
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/3.4.1/css/bootstrap-theme.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css">
+    <script src="https://cdn.bootcss.com/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <script src="https://cdn.bootcss.com/localforage/1.7.3/localforage.min.js"></script>
     <script src="https://cdn.bootcss.com/lodash.js/4.17.15/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
@@ -23,22 +25,58 @@
             text-decoration-line: line-through;
             color: rgb(160, 160, 160);
         }
+        .input{
+            display:flex;
+            justify-content: space-between;
+            margin: 2vh auto;
+        }
+        input[type="text"]{
+            border-style: none;
+            border-bottom-style: solid;
+            border-bottom-width: 2px;
+            border-bottom-color: rgb(71, 71, 71);
+            width:60%;
+        }
+        .list ul>li{ 
+            list-style: none;
+            margin:10px auto;
+        }
+        li button{
+            margin:3px 10px;
+            position:absolute;
+            right:20%;
+            opacity: 0.5;
+        }
+        li{
+            color:rgb(39, 70, 250);
+        }
+        li input[type="checkbox"]{
+            margin-right: 10px;
+        }
+        .clear{
+            position:absolute;
+            left:10px;
+            top:10px;
+        }
     </style>
 </head>
 
 <body>
-    <div id="app">
+    <div id="app" class="container">
         <h1>{{title}}</h1>
+        <button @click="handleClick" class="clear btn btn-danger">
+            清除所有
+        </button>
         <div class="routine">
             <div class="input">
                 <input type="text" v-model.trim="routine" @keydown.enter="handleAddRoutine" placeholder="输入例行公事">
-                <input type="button" value="添加例行公事" @click="handleAddRoutine">
+                <input class="btn btn-primary btn-sm" type="button" value="添加例行公事" @click="handleAddRoutine">
             </div>
             <div class="list">
                 <ul>
                     <li v-for="(r,i) in routines" :key="r.name+i" :class="{'text-complete':r.state}">
-                        <input type="checkbox" v-model="r.state">{{r.name}} <button @click="handleDeleteRoutine(i)"><span
-                                class="fa fa-trash-o"></span></button> <br>
+                        <input type="checkbox" v-model="r.state">{{r.name}} <button class="btn btn-xs btn-danger"
+                            @click="handleDeleteRoutine(i)"><span class="fa fa-trash-o"></span></button> <br>
                     </li>
                 </ul>
             </div>
@@ -46,12 +84,12 @@
         <div class="trivial">
             <div class="input">
                 <input type="text" v-model.trim="trivial" @keydown.enter="handleAddTrivial" placeholder="输入琐事">
-                <input type="button" value="添加琐事" @click="handleAddTrivial">
+                <input class="btn btn-primary btn-sm" type="button" value="添加琐事" @click="handleAddTrivial">
             </div>
             <div class="list">
                 <ul>
                     <li v-for="(t,i) in trivials" :key="t.name+i" :class="{'text-complete':t.state}">
-                        <input type="checkbox" v-model="t.state">{{t.name}}<button @click="handleDeleteTrivial(i)"><span
+                        <input type="checkbox" v-model="t.state">{{t.name}}<button class="btn btn-xs btn-danger" @click="handleDeleteTrivial(i)"><span
                                 class="fa fa-trash-o"></span></button><br>
                     </li>
                 </ul>
@@ -60,15 +98,15 @@
         <div class="todo">
             <div class="input">
                 <input type="text" v-model.trim="todo" @keydown.enter="handleAddTodo" placeholder="输入todo">
-                <input type="button" value="添加todo" @click="handleAddTodo">
+                <input class="btn btn-primary btn-sm" type="button" value="添加todo" @click="handleAddTodo">
             </div>
             <div class="list">
                 <div class="day" v-for="(day,indexDay) in filteredtodos" :key="day.date">
                     <h4>{{day.date}}</h4>
                     <ul>
                         <li v-for="(t,i) in day.todos" :key="t.name+i" :class="{'text-complete':t.state}">
-                            <input type="checkbox" v-model="t.state">{{t.name}}<button @click="handleDeleteTodo(indexDay,i)"><span
-                                    class="fa fa-trash-o"></span></button><br>
+                            <input type="checkbox" v-model="t.state">{{t.name}}<button class="btn btn-xs btn-danger"
+                                @click="handleDeleteTodo(day,i)"><span class="fa fa-trash-o"></span></button><br>
                         </li>
                     </ul>
                 </div>
@@ -99,7 +137,7 @@
                         let tomorrow = !(this.today === new Date().toLocaleDateString());
                         console.log(tomorrow)
                         if (tomorrow) {
-                            this.today=new Date().toLocaleDateString();
+                            this.today = new Date().toLocaleDateString();
                         }
                         localforage.getItem('routines', function (err, data) {
                             if (err) {
@@ -159,15 +197,15 @@
                     },
                     deep: true
                 },
-                today:function(val,oldval){
-                    localforage.setItem('today',val,function(err){
+                today: function (val, oldval) {
+                    localforage.setItem('today', val, function (err) {
                         err && console.log(err);
                     })
                 }
             },
-            computed:{
-                filteredtodos:function(){
-                    return _.sortBy(this.todos,o=>-Date.parse(o.date))
+            computed: {
+                filteredtodos: function () {
+                    return _.sortBy(this.todos, o => -Date.parse(o.date))
                 }
             },
             methods: {
@@ -209,14 +247,28 @@
                     }
                 },
                 handleDeleteRoutine(i) {
-                    this.routines.splice(i,1);
+                    let sure=confirm("确定要删除"+this.routines[i].name+"吗？");
+                    sure && this.routines.splice(i, 1);
                 },
                 handleDeleteTrivial(i) {
-                    this.trivials.splice(i,1);
+                    let sure=confirm("确定要删除"+this.trivials[i].name+"吗？");
+                    sure && this.trivials.splice(i, 1);
                 },
-                handleDeleteTodo(indexDay,i) {
-                    this.todos[indexDay].todos.splice(i,1);
+                handleDeleteTodo(day, i) {
+                    let indexDay=_.findIndex(this.todos,['date',day.date])
+                    let sure=confirm("确定要删除"+day.name+"吗？");
+                    sure && this.todos[indexDay].todos.splice(i, 1);
+                    if (!this.todos[indexDay].todos.length) {
+                        this.todos.splice(indexDay,1);
+                    }
                 },
+                handleClick(){
+                    let sure=confirm("确定要清除所有记录吗？");
+                    sure && (sure=confirm("删除后无法恢复，确定要清除吗？"));
+                    sure && (sure=confirm("再三确定要清除所有吗？"));
+                    sure && localforage.clear();
+                    window.location.reload();
+                }
             }
         });
     </script>
